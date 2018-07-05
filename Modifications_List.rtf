@@ -1,0 +1,32 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf190
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww25600\viewh14060\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs48 \cf0 Created new class, truncated version of pair style lj_cut_coul_cut\
+\
+\'97> pair_lj_cut_coul_trunc.h\
+\
+Modified to truncate -\
+\
+Changed force in compute() function and single() function\
+Changed parsing function ( pair->settings() ) to include sigma for exponential truncation\
+Had to add sigma in .h file\
+should modify coeff, but not sure what that is for yet\
+\
+Also added the following line to syle_pair.h\
+\
+#include "pair_lj_cut_coul_long_trunc.h"\
+\
+To add external potential, copied a file such as fix_wall_lj93.h\
+modified it, and added it to style_pair.h\
+\
+LMF class:\
+	I have implemented the LMF class (fix_lmf and fix_lmf_field) as fixes, because the fix_wall class is similar in nature, being an external field\
+	A call is as follows:\
+\
+fix name group lmf_field lattice_type \
+\
+\
+For dumping the LMF field, I added a small routine in Output.cpp called write_lmf, which is called at the end of the verlet::run command, which depends on a bool \'93lmf_opened\'94 that tells whether a file has been opened yet or not}

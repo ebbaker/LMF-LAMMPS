@@ -1,0 +1,77 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf190
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww22320\viewh13200\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs48 \cf0 Notes for Lammps Usage and Modification\
+\
+Overview:\
+\
+	main.cpp instantiates lammps object (lammps.h)\
+		-The constructor parses different command line arguments\
+		-Sets lammps.infile = stdin (input file from command line)\
+\
+	Inputs file into Input class object, a member of the lammps class (Input.h)\
+		-Calls input->file(), which reads in the file\
+		-Parses commands from the file and executes them (input.cpp -> execute_command() )\
+			execute_command() function is where the commands are read in and executed\
+\
+	Commands are well documented in Lammps manual.  \
+\
+Timestep overview (how simulation is run, and set up where necessary):\
+\
+Explained a little bit in the developers guide\
+\
+The run command invokes a call to the run function in run.cpp, which sets up some of the parameters for updating the system, and then performs the update through update->integrate->run(nsteps)\
+\
+The run function is found in the Verlet class, which is a child class to the Integrate class, which contains a virtual header for the run function (actually implemented by verlet.cpp, assuming one is using the Verlet algorithm)\
+\
+Verlet class (verlet.h):\
+	setup:\
+	The setup method is called before each run, it computes forces, sets up neighbor lists and invokes fixes\
+	First sets up neighbor list\
+	ev_set (integrate.cpp) sets up eflag, vflag (I believe it computes energy)\
+	force_clear zero\'92s all forces\
+	modify->setup_pre_force seems to impose the various fixes imposed in the system (modify class)\
+	a series of computes compute the forces, bonds and angles for all the atoms and pairs\
+		force->pair->compute calculates pair forces in the pair class, the compute function is a virtual function that is in the child classes that describe different types of forces.  For example, for the pair style lj/cut/coul/long (used for SPC/E water), we will describe the compute function:\
+			Cycle through neighbor list, a Neigh_list object found in the pair class, indexed with the same index as the atom list (atom class), found in the pointers class (inherited by every class) \
+				setup coordinates of the first atom, then cycle through all neighbors of that atom\
+					calculate force between neighbors - cutoff coulomb and LJ\
+					add these forces to f (=atom->f), which stores the force on atom i\
+\
+\
+Pair Style (pair.h and sub_classes):\
+	The pair style is set up with the pair_style command, this is where the type of interaction is defined\
+	This command is parsed and read in input.cpp ( pair_style() function ), which calls force->create_pair(pair style, suffix), and force->pair->settings(num_args, arg pointer)\
+		create_pair sets up the new pair, and calls new_pair, which calls pair_creator, that sets up the new pair.   The pair is found in the pair_map->find function, which must be modified to create a new pair style\
+\
+\
+\
+\
+Fixes:\
+	A fix is any of a set of different commands that specifies a value for certain parameters, \
+	or adds an external potential\
+	Fixes are created in the modify class (add_fix), listed in style_fix.h\
+	and implemented in the verlet->run algorithm under modify->(function)\
+		the modify (fix) functions that are implemented in verlet algorithm are:\
+			modify->initial_integrate, post_integrate\
+			pre_force, post_force\
+			pre_exchange\
+			final_integrate, end_of_step\
+	not all fixes define all of those functions, and the fixes are placed into arrays according to whether \
+	or not the function is defined.  So for example, a wall fix does not define an initial_integrate() function\
+	and therefore is not placed into the list_initial_integrate[] array\
+\
+External Field:\
+	The way I\'92ve implemented an external field is based on a wall fix.  All external field files begin with the word field.  The parent class is \'93field_external.h\'94, which is a child class of \'93fix.h\'94 because it is implemented in a way similar to a wall fix.\
+	For LMF call, goes as follows:\
+		fix name group_id\
+\
+	\
+		\
+	\
+\
+\
+}
