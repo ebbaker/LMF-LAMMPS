@@ -85,6 +85,17 @@ Fix_MULTI::Fix_MULTI(LAMMPS *lmp, int narg, char **arg) : Fix(lmp, narg, arg){
         else if (strcmp(arg[iarg],"multi")==0){
             if (iarg+5 > narg ) error->all(FLERR,"Illegal fix LMF command");
             ALL_flag=1;
+			flmf_flag=0;
+            sigma_in=force->numeric(FLERR,arg[iarg+1])/sqrt(2.0);
+            num_rand=int(force->numeric(FLERR,arg[iarg+2]));
+            omega_temp=force->numeric(FLERR,arg[iarg+3]);
+            it_temp=force->numeric(FLERR,arg[iarg+4]);
+            iarg+=5;
+        }
+		else if (strcmp(arg[iarg],"flmf")==0){
+            if (iarg+5 > narg ) error->all(FLERR,"Illegal fix LMF command");
+            ALL_flag=1;
+			flmf_flag=1;
             sigma_in=force->numeric(FLERR,arg[iarg+1])/sqrt(2.0);
             num_rand=int(force->numeric(FLERR,arg[iarg+2]));
             omega_temp=force->numeric(FLERR,arg[iarg+3]);
@@ -255,6 +266,12 @@ void Fix_MULTI::setup_lmf_lattice(int grid_num)
 	sc[grid_num] = new MULTI_GRID(nt_temp, gs_temp, lmf_lo, sigma, flags);
 	potential[grid_num] = new MULTI_GRID(nt_temp, gs_temp, lmf_lo, sigma, flags);
 
+	if(grid_num==0 && flmf_flag==1){
+		j=new double *** [3];
+		for(int dim=0; dim<3; dim++)
+			j[dim]=create_array(nt_temp);
+	}
+
 }
 
 int Fix_MULTI::modify_param(int narg, char **arg)
@@ -316,9 +333,15 @@ void Fix_MULTI::MULTI_update(){
     bigint ntimestep=update->ntimestep;
     
     sc[0]->zero();
-    rand_add();
-    st = pow(lmf_sigma,2.0)-pow(sigma_in,2.0);
-    sc[0]->spread_charge(st);
+    if(flmf_flag==0){
+		rand_add();
+	    st = pow(lmf_sigma,2.0)-pow(sigma_in,2.0);
+    	sc[0]->spread_charge(st);
+	}
+	else if(flmf_flag==1){
+		j_add();
+		//sc[0]->sc_update(j);
+	}
     
     for(int gn=0; gn<num_grids-1; gn++){
         sc[gn+1]->zero();
@@ -413,6 +436,30 @@ void Fix_MULTI::rand_add(){
         } 
 }
 
+void Fix_MULTI::j_add(){
+    double **x = atom->x;
+    int *mask = atom->mask;
+    double *q = atom->q;
+    int nlocal = atom->nlocal;
+    MULTI_GRID * sct = sc[0];
+    double pos[3]; double q_add; int ind[3]; int dim;
+    std::normal_distribution<double> dist(0.0,sigma_in);
+    double *** array = sc[0]->array;
+    
+    for (int i = 0; i < nlocal; i++)
+        if (mask[i] & groupbit) {
+            for(int n=0; n<num_rand; n++){
+                q_add=q[i]*sc_pf;
+                for(dim=0; dim<3; dim++)
+                    pos[dim]=x[i][dim]+dist(gen);
+                if(sct->ind_calc(ind, pos)){
+                    array[ind[0]][ind[1]][ind[2]] += q_add;
+                    sc[0]->update_boundary(ind[0],ind[1],ind[2]);
+                }
+            }
+        } 
+}
+
 
 
 
@@ -444,6 +491,18 @@ void Fix_MULTI::post_force(int vflag){
   MULTI_force();
 }
 
+double *** Fix_MULTI::create_array(int * size){
+	double *** ar = new double ** [size[0]];
+	for(int n0=0; n0<size[0]; n0++){
+		ar[n0]=new double * [size[1]];
+		for(int n1=0; n1<size[1]; n1++){
+			ar[n0][n1]= new double [size[2]];
+			for(int n2=0; n2<size[2]; n2++)
+				ar[n0][n1][n2]=0.0;
+		}
+	}
+	return ar;
+}
 
 
 

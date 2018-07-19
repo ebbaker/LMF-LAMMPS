@@ -94,10 +94,9 @@ void Verlet::setup(int flag)
   if (comm->me == 0 && screen) {
     fprintf(screen,"Setting up Verlet run ...\n");
     if (flag) {
-      fprintf(screen,"  Unit style    : %s\n", update->unit_style);
-      fprintf(screen,"  Current step  : " BIGINT_FORMAT "\n",
-              update->ntimestep);
-      fprintf(screen,"  Time step     : %g\n", update->dt);
+      fprintf(screen,"  Unit style    : %s\n",update->unit_style);
+      fprintf(screen,"  Current step  : " BIGINT_FORMAT "\n",update->ntimestep);
+      fprintf(screen,"  Time step     : %g\n",update->dt);
       timer->print_timeout(screen);
     }
   }
@@ -125,7 +124,8 @@ void Verlet::setup(int flag)
   domain->image_check();
   domain->box_too_small_check();
   modify->setup_pre_neighbor();
-  neighbor->build();
+  neighbor->build(1);
+  modify->setup_post_neighbor();
   neighbor->ncalls = 0;
 
   // compute all forces
@@ -186,7 +186,8 @@ void Verlet::setup_minimal(int flag)
     domain->image_check();
     domain->box_too_small_check();
     modify->setup_pre_neighbor();
-    neighbor->build();
+    neighbor->build(1);
+    modify->setup_post_neighbor();
     neighbor->ncalls = 0;
   }
 
@@ -231,6 +232,7 @@ void Verlet::run(int n)
   int n_post_integrate = modify->n_post_integrate;
   int n_pre_exchange = modify->n_pre_exchange;
   int n_pre_neighbor = modify->n_pre_neighbor;
+  int n_post_neighbor = modify->n_post_neighbor;
   int n_pre_force = modify->n_pre_force;
   int n_pre_reverse = modify->n_pre_reverse;
   int n_post_force = modify->n_post_force;
@@ -286,8 +288,12 @@ void Verlet::run(int n)
         modify->pre_neighbor();
         timer->stamp(Timer::MODIFY);
       }
-      neighbor->build();
+      neighbor->build(1);
       timer->stamp(Timer::NEIGH);
+      if (n_post_neighbor) {
+        modify->post_neighbor();
+        timer->stamp(Timer::MODIFY);
+      }
     }
 
     // force computations
@@ -348,7 +354,7 @@ void Verlet::run(int n)
       output->write(ntimestep);
       timer->stamp(Timer::OUTPUT);
     }
-    int my_rank;
+	int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
     //if(my_rank==0) printf("ntimestep %d \n",ntimestep);
     int lmf_slab = modify->lmf_slab_check();

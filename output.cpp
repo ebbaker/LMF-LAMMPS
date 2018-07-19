@@ -910,7 +910,7 @@ void Output::write_lmf(bigint ntimestep){
     double *gs = lmf_ptr->grid_spac;
     double *lo = lmf_ptr->lmf_lo;
     double sigma = lmf_ptr->lmf_sigma;
-  https://mail.google.com/mail/u/0/#inbox  bool ensemble_flag=lmf_ptr->ensemble_flag;
+	bool ensemble_flag = lmf_ptr->ensemble_flag;
     
     LMF_GRID * sc = lmf_ptr->smooth_charge;
     LMF_GRID * LMF_potential = lmf_ptr->LMF_potential; 

@@ -18,13 +18,18 @@
 
 namespace LAMMPS_NS {
 
+class DumpNetCDF;
+class DumpNetCDFMPIIO;
+
 class Thermo : protected Pointers {
   friend class MinCG;                  // accesses compute_pe
+  friend class DumpNetCDF;             // accesses thermo properties
+  friend class DumpNetCDFMPIIO;        // accesses thermo properties
 
  public:
-    
+
   double return_temp();
- 
+
   char *style;
   int normflag;          // 0 if do not normalize by atoms, 1 if normalize
   int modified;          // 1 if thermo_modify has been used, else 0
@@ -115,6 +120,7 @@ class Thermo : protected Pointers {
   typedef void (Thermo::*FnPtr)();
   void addfield(const char *, FnPtr, int);
   FnPtr *vfunc;                // list of ptrs to functions
+  void call_vfunc(int ifield);
 
   void compute_compute();      // functions that compute a single value
   void compute_fix();          // via calls to  Compute,Fix,Variable classes

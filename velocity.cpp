@@ -69,6 +69,12 @@ void Velocity::command(int narg, char **arg)
   if (igroup == -1) error->all(FLERR,"Could not find velocity group ID");
   groupbit = group->bitmask[igroup];
 
+  // check if velocities of atoms in rigid bodies are updated
+
+  if (modify->check_rigid_group_overlap(groupbit))
+    error->warning(FLERR,"Changing velocities of atoms in rigid bodies. "
+                     "This has no effect unless rigid bodies are rebuild");
+
   // identify style
 
   if (strcmp(arg[1],"create") == 0) style = CREATE;
@@ -127,7 +133,7 @@ void Velocity::command(int narg, char **arg)
   if (style == CREATE) {
     double t_desired = force->numeric(FLERR,arg[2]);
     int seed = force->inumeric(FLERR,arg[3]);
-    if(universe->existflag==1) {
+	if(universe->existflag==1) {
 			int my_rank;
 			MPI_Comm_rank(MPI_COMM_WORLD,&my_rank);
 			seed = seed + 10*universe->iworld;  

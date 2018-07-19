@@ -48,7 +48,7 @@ class PPPM : public KSpace {
   virtual double memory_usage();
 
   virtual void compute_group_group(int, int, int);
-  
+
   double force_lmf[3];
 
  protected:

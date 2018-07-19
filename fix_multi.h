@@ -35,10 +35,11 @@ class Fix_MULTI : public Fix {
         MULTI_GRID ** potential, ** sc;
         
         bool ensemble_flag, no_force, root_bool, slab_flag, debug, ALL_flag, slab_write, rad_write, force_ew_write;
-        bool error_flag;
+        bool error_flag, flmf_flag;
         
         double lmf_pf, lmf_sigma, sigma_in, gs_ratio, pow_base, slab_vol_factor, sc_pf;
         double ** grid_spac, ** grid_lo, *omega, *hpf;
+		double **** j;
         int ** n_tot, * it_freq;
         int num_grids, output_write_freq, force_write_freq, num_rand;
         
@@ -65,7 +66,9 @@ class Fix_MULTI : public Fix {
         
         
     private:
-    
+
+		void j_add();
+		double *** create_array(int * );    
         void rand_add();
         int fldflag;
         bool verbose;

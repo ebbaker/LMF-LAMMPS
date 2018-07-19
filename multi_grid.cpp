@@ -425,10 +425,11 @@ void MULTI_GRID::update_boundary(int n_0, int n_1, int n_2){
 
 int MULTI_GRID::return_opposite(int ind,int high){
     if(ind>1 && ind<high-2) return ind;
-    if(ind==1) return (high-1);
-    if(ind==(high-2)) return 0;
-    if(ind==0) return (high-2);
-    if(ind==(high-1)) return 1;
+    else if(ind==1) return (high-1);
+    else if(ind==(high-2)) return 0;
+    else if(ind==0) return (high-2);
+    else if(ind==(high-1)) return 1;
+	else return -1;
 }
 
 
